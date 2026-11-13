@@ -48,10 +48,8 @@ fail_test() {
     exit 0
 }
 
-ADB_BIN="${ADB:-adb}"
-
-if ! command -v "$ADB_BIN" >/dev/null 2>&1; then
-    fail_test "adb command not found: $ADB_BIN"
+if ! command -v ps >/dev/null 2>&1; then
+    fail_test "ps command not found on the DUT"
 fi
 
 log_info "-----------------------------------------------------------------------------------------"
@@ -59,32 +57,24 @@ log_info "------------------- Starting ${TESTNAME} Testcase --------------------
 log_info "==== Test Initialization ===="
 log_info "Checking for systemd-udevd on the DUT"
 
-if [ -n "${ADB_SERIAL:-}" ]; then
-    PS_OUTPUT=$("$ADB_BIN" -s "$ADB_SERIAL" shell "ps -ef" 2>&1)
-    ADB_STATUS=$?
-else
-    PS_OUTPUT=$("$ADB_BIN" shell "ps -ef" 2>&1)
-    ADB_STATUS=$?
-fi
+PS_OUTPUT=$(ps -ef 2>&1)
+PS_STATUS=$?
 
-if [ "$ADB_STATUS" -ne 0 ]; then
-    log_info "ADB command output: $PS_OUTPUT"
-    fail_test "Failed to run ps -ef through adb"
+if [ "$PS_STATUS" -ne 0 ]; then
+    log_info "ps command output: $PS_OUTPUT"
+    fail_test "Failed to run ps -ef on the DUT"
 fi
-
-# Remove carriage returns that may be returned by the remote shell.
-PS_OUTPUT=$(printf '%s\n' "$PS_OUTPUT" | tr -d '\r')
 
 MATCHED_LINE=$(
     printf '%s\n' "$PS_OUTPUT" |
-        grep -E '^[[:space:]]*[0-9]+[[:space:]]+root[[:space:]]+[0-9]+:[0-9]{2}[[:space:]]+/lib/systemd/systemd-udevd([[:space:]]|$)' ||
+        grep -E '^[[:space:]]*root[[:space:]].*/lib/systemd/systemd-udevd([[:space:]]|$)' ||
         true
 )
 
 if [ -z "$MATCHED_LINE" ]; then
     log_info "Output from ps -ef:"
     log_info "$PS_OUTPUT"
-    fail_test "Expected systemd-udevd process line was not found"
+    fail_test "Expected root-owned /lib/systemd/systemd-udevd process was not found"
 fi
 
 log_info "Matching process line: $MATCHED_LINE"
