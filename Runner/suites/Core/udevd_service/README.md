@@ -5,7 +5,7 @@
 Checks that `systemd-udevd` is running on the DUT.
 
 The test runs `ps -ef` locally on the DUT and looks for a root-owned
-`/lib/systemd/systemd-udevd` process. It does not use `adb`.
+`/lib/systemd/systemd-udevd` process.
 
 ## Requirements
 

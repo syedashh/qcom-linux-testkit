@@ -1,0 +1,40 @@
+metadata:
+  name: check_usr_dir
+  format: Lava-Test Test Definition 1.0
+  description: "Check /bin, /sbin, and /lib symlinks and their directories under /usr without adb"
+  maintainer:
+    - "Qualcomm Linux Testkit"
+
+params: {}
+
+run:
+  steps:
+    - |
+      SEARCH_ROOT="${TESTS_DIR:-$PWD}"
+      PUBLISHER="$(find "$SEARCH_ROOT" -type f -path '*/Runner/utils/send-to-lava.sh' -print -quit 2>/dev/null)"
+
+      if [ -z "$PUBLISHER" ]; then
+          echo "Could not find Runner/utils/send-to-lava.sh under $SEARCH_ROOT"
+          exit 1
+      fi
+
+      REPO_PATH="${PUBLISHER%/Runner/utils/send-to-lava.sh}"
+      TEST_DIR="$REPO_PATH/Runner/suites/Core/check_user_dir"
+      RESULT_FILE="$TEST_DIR/check_usr_dir.res"
+
+      if [ ! -f "$TEST_DIR/run.sh" ]; then
+          echo "Test script not found: $TEST_DIR/run.sh"
+          exit 1
+      fi
+
+      cd "$TEST_DIR" || exit 1
+      chmod +x ./run.sh
+      ./run.sh || true
+
+      if [ ! -f "$RESULT_FILE" ]; then
+          echo "Result file was not created: $RESULT_FILE"
+          exit 1
+      fi
+
+      cat "$RESULT_FILE"
+      "$PUBLISHER" "$RESULT_FILE"
