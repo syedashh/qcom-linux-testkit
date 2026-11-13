@@ -24,7 +24,8 @@ done
 
 if [ -z "$INIT_ENV" ]; then
     echo "[ERROR] Could not find init_env, starting at $SCRIPT_DIR" >&2
-    exit 1
+    echo "$LAVA_CASE_ID FAIL" > "$RES_FILE"
+    exit 0
 fi
 
 if [ -z "${__INIT_ENV_LOADED:-}" ]; then
@@ -36,29 +37,19 @@ fi
 # shellcheck disable=SC1091
 . "$TOOLS/functestlib.sh"
 
-rm -f "$RES_FILE"
-
 fail_test() {
     log_fail "$1"
     echo "$LAVA_CASE_ID FAIL" > "$RES_FILE"
     exit 0
 }
 
-test_path="$(find_test_case_by_name "$TESTNAME")"
-if [ -z "$test_path" ] || [ ! -d "$test_path" ]; then
-    fail_test "$TESTNAME test directory not found"
-fi
-
-cd "$test_path" || fail_test "Could not enter test directory: $test_path"
-RES_FILE="$test_path/${TESTNAME}.res"
+rm -f "$RES_FILE"
 
 if ! command -v ps >/dev/null 2>&1; then
     fail_test "ps command not found on the DUT"
 fi
 
-log_info "-----------------------------------------------------------------------------------------"
-log_info "------------------- Starting ${TESTNAME} Testcase ----------------------------"
-log_info "==== Test Initialization ===="
+log_info "Starting ${TESTNAME}"
 log_info "Checking for systemd-udevd on the DUT"
 
 PS_OUTPUT=$(ps -ef 2>&1)
@@ -82,9 +73,8 @@ if [ -z "$MATCHED_LINE" ]; then
 fi
 
 log_info "Matching process line: $MATCHED_LINE"
-log_pass "$LAVA_CASE_ID, systemd-udevd is running with the expected process format"
+log_pass "$LAVA_CASE_ID: systemd-udevd is running"
 
 echo "$LAVA_CASE_ID PASS" > "$RES_FILE"
-
-log_info "------------------- Completed ${TESTNAME} Testcase ----------------------------"
+log_info "Completed ${TESTNAME}"
 exit 0
