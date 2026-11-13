@@ -6,6 +6,11 @@ SCRIPT_DIR="$(
     cd "$(dirname "$0")" || exit 1
     pwd
 )"
+
+TESTNAME="Systemd_Udev_Service"
+LAVA_CASE_ID="udev_service_info"
+RES_FILE="$SCRIPT_DIR/${TESTNAME}.res"
+
 INIT_ENV=""
 SEARCH="$SCRIPT_DIR"
 
@@ -31,22 +36,21 @@ fi
 # shellcheck disable=SC1091
 . "$TOOLS/functestlib.sh"
 
-TESTNAME="Systemd_Udev_Service"
-test_path="$(find_test_case_by_name "$TESTNAME")" || {
-    log_fail "$TESTNAME, test directory not found"
-    echo "$TESTNAME FAIL" > "./$TESTNAME.res"
-    exit 1
-}
-
-cd "$test_path" || exit 1
-RES_FILE="./${TESTNAME}.res"
 rm -f "$RES_FILE"
 
 fail_test() {
     log_fail "$1"
-    echo "$TESTNAME FAIL" > "$RES_FILE"
+    echo "$LAVA_CASE_ID FAIL" > "$RES_FILE"
     exit 0
 }
+
+test_path="$(find_test_case_by_name "$TESTNAME")"
+if [ -z "$test_path" ] || [ ! -d "$test_path" ]; then
+    fail_test "$TESTNAME test directory not found"
+fi
+
+cd "$test_path" || fail_test "Could not enter test directory: $test_path"
+RES_FILE="$test_path/${TESTNAME}.res"
 
 if ! command -v ps >/dev/null 2>&1; then
     fail_test "ps command not found on the DUT"
@@ -78,7 +82,9 @@ if [ -z "$MATCHED_LINE" ]; then
 fi
 
 log_info "Matching process line: $MATCHED_LINE"
-log_pass "$TESTNAME, systemd-udevd is running with the expected process format"
-echo "$TESTNAME PASS" > "$RES_FILE"
+log_pass "$LAVA_CASE_ID, systemd-udevd is running with the expected process format"
+
+echo "$LAVA_CASE_ID PASS" > "$RES_FILE"
+
 log_info "------------------- Completed ${TESTNAME} Testcase ----------------------------"
 exit 0
